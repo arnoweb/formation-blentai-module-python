@@ -1,5 +1,6 @@
 # users.py
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
+
 
 users_bp = Blueprint("users", __name__)
 
@@ -9,6 +10,8 @@ def get_users():
 
 @users_bp.route("/", methods=["POST"])
 def create_user():
+    data = request.get_json()
+    print(data)
     return jsonify({"message": "Utilisateur créé"}), 201
 
 @users_bp.route("/<int:user_id>", methods=["PUT"])
