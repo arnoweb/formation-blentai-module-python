@@ -1,6 +1,7 @@
 from flask import Flask
 from users import users_bp
 from admin import admin_bp
+from products import products_bp
 from sqlalchemy import text
 from database import db
 from dotenv import load_dotenv
@@ -9,6 +10,10 @@ from pathlib import Path
 import os
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
+
+import click
+from werkzeug.security import generate_password_hash
+from models import User
 
 # On charge le fichier .env.local
 load_dotenv(Path(__file__).resolve().parent / ".env.local")
@@ -38,11 +43,41 @@ with app.app_context():
 
 
 app.register_blueprint(users_bp, url_prefix="/api/auth")
-app.register_blueprint(admin_bp, url_prefix="/admin")
+app.register_blueprint(products_bp, url_prefix="/api/produits")
+app.register_blueprint(admin_bp, url_prefix="/api/orders")
+
+
+#####################################################
+# COMMANDE : CRÉATION D'UN ADMIN
+#####################################################
+# L'API n'autorise plus le choix du rôle, donc on crée les admins en ligne de commande
+# flask --app app create-admin admin@test.fr motdepasse
+@app.cli.command("create-admin")
+@click.argument("email")
+@click.argument("password")
+def create_admin(email, password):
+    existant = db.session.execute(
+        db.select(User).filter_by(email=email)
+    ).scalar_one_or_none()
+
+    if existant is not None:
+        print(f"Un utilisateur existe déjà avec l'email {email}")
+        return
+
+    user = User(
+        email=email,
+        nom="Admin",
+        password_hash=generate_password_hash(password),
+        role="admin"
+    )
+    db.session.add(user)
+    db.session.commit()
+    print(f"Admin créé : {email}")
+
 
 @app.route("/")
 def index():
-    return "Hello, World!"
+    return "BlentAI - API for E-commerce"
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

@@ -20,7 +20,7 @@ def create_user():
         email=data["email"],
         nom=data["name"],
         password_hash=generate_password_hash(data["password"]),
-        role=data["role"]
+        role="client"
     )
     #On prépare l'ajout
     db.session.add(user)
@@ -52,6 +52,10 @@ def get_current_user():
 # Modification d'un utilisateur
 @users_bp.route("/register/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
+    # On ne peut modifier que son propre compte
+    if int(get_jwt_identity()) != user_id:
+        return jsonify({"error": "Accès refusé"}), 403
+
     data = request.get_json()
     user = db.session.get(User, user_id)
 

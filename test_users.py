@@ -111,3 +111,24 @@ def test_create_user(client, request):
     assert resultat["id"] == user_id
     assert resultat["email"] == data_modify["email"]
     assert resultat["role"] == role
+
+
+#####################################################
+# ÉCRITURES REFUSÉES POUR UN NON-ADMIN
+#####################################################
+
+@pytest.mark.parametrize("method", ["POST", "PUT", "DELETE"])
+def test_ecriture_non_admin_refusee(client, produit, auth_headers, method):
+    headers = auth_headers("client")
+
+    url = (
+        "/api/produits/"
+        if method == "POST"
+        else f"/api/produits/{produit['id']}"
+    )
+
+    print(f"Appel API non-admin : {method} {url}")
+
+    response = client.open(url, method=method, headers=headers, json={})
+
+    assert response.status_code == 403
