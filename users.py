@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from database import db
 
 
@@ -28,6 +28,26 @@ def create_user():
     db.session.commit()
     #On retourne la réponse
     return jsonify({"message": "Utilisateur créé"}), 201
+
+
+@users_bp.route("/me", methods=["GET"])
+@jwt_required()  # Verification validité du Token 
+def get_current_user():
+    # On récupère l'id de l'utilisateur dans le token
+    user_id = int(get_jwt_identity())
+
+    # On check dans la DB
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return jsonify({"error": "Utilisateur introuvable"}), 401
+
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "role": user.role
+    }), 200
+
 
 # Modification d'un utilisateur
 @users_bp.route("/register/<int:user_id>", methods=["PUT"])

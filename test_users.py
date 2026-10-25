@@ -67,7 +67,7 @@ def test_create_user(client, request):
         assert user.nom == data_modify["name"]
 
 
-# Connexion d'un utilisateur
+# Test de connexion d'un utilisateur
 
     identifiants = {
         "email": data_modify["email"],
@@ -82,6 +82,8 @@ def test_create_user(client, request):
 
     assert response.status_code == 200
 
+
+
     # On récupère le token
     resultat = response.get_json()
     token = resultat.get("access_token")
@@ -89,3 +91,23 @@ def test_create_user(client, request):
     # On check s'il est vide
     assert isinstance(token, str)
     assert token != ""
+
+    url = "/api/auth/me"
+    response = client.get(url)
+    print(f"Appel API : POST {url}")
+    assert response.status_code == 401
+
+    # On envoie le Bearer dans les Headers à l'appel /auth/me
+    response = client.get(
+        url,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    print(f"Appel API : Response {response.data}")
+
+    # Virification dans la BDD
+    resultat = response.get_json()
+    assert resultat["id"] == user_id
+    assert resultat["email"] == data_modify["email"]
+    assert resultat["role"] == role
