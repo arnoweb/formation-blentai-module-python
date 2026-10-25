@@ -65,3 +65,27 @@ def test_create_user(client, request):
         assert user is not None
         assert user.email == data_modify["email"]
         assert user.nom == data_modify["name"]
+
+
+# Connexion d'un utilisateur
+
+    identifiants = {
+        "email": data_modify["email"],
+        "password": data["password"]
+    }
+
+    url = "/api/auth/login"
+    print(f"Appel API : POST {url}")
+
+    response = client.post(url, json=identifiants)
+    print(f"Appel API : Response {response.data}")
+
+    assert response.status_code == 200
+
+    # On récupère le token
+    resultat = response.get_json()
+    token = resultat.get("access_token")
+
+    # On check s'il est vide
+    assert isinstance(token, str)
+    assert token != ""

@@ -5,4 +5,8 @@
 # Cela créé une entrée dans la base
 # Le -s pour voir les logs (print)
 python -m pytest test_users.py -v -s --role=admin
-python -m pytest test_users.py -v -s --role=admin
+python -m pytest test_users.py -v -s --role=client
+
+
+
+

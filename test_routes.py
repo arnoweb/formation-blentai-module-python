@@ -10,7 +10,7 @@ def client():
         yield client
 
 # on déclare le paramètre url pour les tests
-@pytest.mark.parametrize("url", ["/", "/users/", "/admin/"])
+@pytest.mark.parametrize("url", ["/", "/api/auth/"])
 
 # on teste les routes GET et on vérifie que le status code est 200
 def test_routes_get_retournent_200(client, url):

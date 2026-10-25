@@ -3,8 +3,23 @@ from users import users_bp
 from admin import admin_bp
 from sqlalchemy import text
 from database import db
+from dotenv import load_dotenv
+from pathlib import Path
+
+import os
+from datetime import timedelta
+from flask_jwt_extended import JWTManager
+
+# On charge le fichier .env.local
+load_dotenv(Path(__file__).resolve().parent / ".env.local")
 
 app = Flask(__name__)
+
+# On utilise Flask JWT - on lit le fichier .env - durée du token Secret de 15 minutes
+app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
+
+jwt = JWTManager(app)
 
 # SQLITE
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///digimarket.db"
