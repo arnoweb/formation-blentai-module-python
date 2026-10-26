@@ -25,7 +25,7 @@ def create_admin(email, password):
         email=email,
         nom="Admin",
         password_hash=generate_password_hash(password),
-        role="admin"
+        role="admin",
     )
     db.session.add(user)
     db.session.commit()

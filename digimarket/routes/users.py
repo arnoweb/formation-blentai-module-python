@@ -22,11 +22,11 @@ users_bp = APIBlueprint("users", __name__, url_prefix="/api/auth", tag="Utilisat
 @users_bp.route("/", methods=["GET"])
 @admin_required
 @users_bp.output(UserOut(many=True))
-@users_bp.doc(summary="Lister les utilisateurs", security="BearerAuth", responses=[401, 403])
+@users_bp.doc(
+    summary="Lister les utilisateurs", security="BearerAuth", responses=[401, 403]
+)
 def get_users():
-    return db.session.execute(
-        db.select(User).order_by(User.id)
-    ).scalars().all()
+    return db.session.execute(db.select(User).order_by(User.id)).scalars().all()
 
 
 # Création d'un utilisateur (toujours avec le rôle client)
@@ -39,7 +39,7 @@ def create_user(json_data):
         email=json_data["email"],
         nom=json_data["name"],
         password_hash=generate_password_hash(json_data["password"]),
-        role="client"
+        role="client",
     )
     db.session.add(user)
     db.session.commit()
@@ -49,10 +49,7 @@ def create_user(json_data):
 
 # Connexion : renvoie un token JWT
 @users_bp.route("/login", methods=["POST"])
-@users_bp.input(LoginIn, example={
-    "email": "admin@example.com",
-    "password": "XXXXXXX"
-})
+@users_bp.input(LoginIn, example={"email": "admin@example.com", "password": "XXXXXXX"})
 @users_bp.output(TokenOut)
 @users_bp.doc(summary="Se connecter et obtenir un token", responses=[401])
 def login(json_data):
@@ -61,7 +58,9 @@ def login(json_data):
     ).scalar_one_or_none()
 
     # On vérifie le mdp sinon 401
-    if user is None or not check_password_hash(user.password_hash, json_data["password"]):
+    if user is None or not check_password_hash(
+        user.password_hash, json_data["password"]
+    ):
         abort(401, "Identifiants incorrects")
 
     # Le token contient l'ID du user : on le relira ensuite pour retrouver son rôle
@@ -87,7 +86,9 @@ def get_current_user():
 @jwt_required()
 @users_bp.input(UserUpdate)
 @users_bp.output(UserOut)
-@users_bp.doc(summary="Modifier mon compte", security="BearerAuth", responses=[401, 403, 404])
+@users_bp.doc(
+    summary="Modifier mon compte", security="BearerAuth", responses=[401, 403, 404]
+)
 def update_user(user_id, json_data):
     # On ne peut modifier que son propre compte
     if int(get_jwt_identity()) != user_id:
@@ -116,7 +117,11 @@ def update_user(user_id, json_data):
 @users_bp.route("/<int:user_id>", methods=["DELETE"])
 @admin_required
 @users_bp.output({}, status_code=204)
-@users_bp.doc(summary="Supprimer un utilisateur", security="BearerAuth", responses=[401, 403, 404, 409])
+@users_bp.doc(
+    summary="Supprimer un utilisateur",
+    security="BearerAuth",
+    responses=[401, 403, 404, 409],
+)
 def delete_user(user_id):
     # Un admin ne peut pas supprimer son propre compte
     if int(get_jwt_identity()) == user_id:

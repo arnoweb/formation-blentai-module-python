@@ -13,12 +13,8 @@ from digimarket.schemas import (
 )
 
 products_bp = APIBlueprint(
-    "products",
-    __name__,
-    url_prefix="/api/produits",
-    tag="Produits"
+    "products", __name__, url_prefix="/api/produits", tag="Produits"
 )
-
 
 
 def trouver_produit(product_id):
@@ -33,6 +29,7 @@ def trouver_produit(product_id):
 #####################################################
 # LISTE DES PRODUITS
 #####################################################
+
 
 @products_bp.get("/")
 @products_bp.input(ProductQuery, location="query")
@@ -58,18 +55,16 @@ def get_products(query_data):
         requete,
         page=query_data["page"],
         per_page=query_data["per_page"],
-        error_out=False
+        error_out=False,
     )
 
-    return {
-        "products": pagination.items,
-        "pagination": pagination_builder(pagination)
-    }
+    return {"products": pagination.items, "pagination": pagination_builder(pagination)}
 
 
 #####################################################
 # DÉTAIL D'UN PRODUIT
 #####################################################
+
 
 @products_bp.get("/<int:product_id>")
 @products_bp.output(ProductOut)
@@ -81,8 +76,9 @@ def get_product(product_id):
 # ADMIN : CRÉATION D'UN PRODUIT
 #####################################################
 
+
 @products_bp.post("/")
-@admin_required # Seul un admin a le droit de créer un produit
+@admin_required  # Seul un admin a le droit de créer un produit
 @products_bp.input(ProductCreate)
 @products_bp.output(ProductOut, status_code=201)
 @products_bp.doc(security="BearerAuth", responses=[401, 403])
@@ -98,6 +94,7 @@ def create_product(json_data):
 #####################################################
 # ADMIN : MODIFICATION D'UN PRODUIT
 #####################################################
+
 
 @products_bp.route("/<int:product_id>", methods=["PUT", "PATCH"])
 @admin_required
@@ -120,6 +117,7 @@ def update_product(product_id, json_data):
 # ADMIN : SUPPRESSION D'UN PRODUIT
 #####################################################
 
+
 @products_bp.delete("/<int:product_id>")
 @admin_required
 @products_bp.output({}, status_code=204)
@@ -128,11 +126,8 @@ def delete_product(product_id):
     product = trouver_produit(product_id)
 
     commande = db.session.execute(
-        text(
-            "SELECT 1 FROM order_item "
-            "WHERE produit_id = :product_id LIMIT 1"
-        ),
-        {"product_id": product_id}
+        text("SELECT 1 FROM order_item WHERE produit_id = :product_id LIMIT 1"),
+        {"product_id": product_id},
     ).first()
 
     if commande is not None:

@@ -4,7 +4,6 @@ from digimarket.database import db
 
 
 class Product(db.Model):
-
     __tablename__ = "product"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -14,7 +13,5 @@ class Product(db.Model):
     prix = db.Column(db.Float, nullable=False)
     quantite_stock = db.Column(db.Integer, default=0)
     date_creation = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=lambda: datetime.now(UTC)
+        db.DateTime, nullable=False, default=lambda: datetime.now(UTC)
     )

@@ -142,7 +142,9 @@ L'API utilise **SQLite** : la base est un simple fichier, `instance/digimarket.d
 L'accès passe par l'ORM **SQLAlchemy**, donc le code ne dépend pas de SQLite. Pour utiliser une autre base (PostgreSQL, MySQL…), il suffit de changer `SQLALCHEMY_DATABASE_URI` dans `digimarket/config.py` et d'installer le pilote correspondant, par exemple :
 
 ```python
-SQLALCHEMY_DATABASE_URI = "postgresql://utilisateur:motdepasse@localhost:5432/digimarket"
+SQLALCHEMY_DATABASE_URI = (
+    "postgresql://utilisateur:motdepasse@localhost:5432/digimarket"
+)
 ```
 
 ### Exemples de requêtes SQL

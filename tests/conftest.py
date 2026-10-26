@@ -14,10 +14,9 @@ from digimarket.models import Product, User
 def app(tmp_path_factory):
     db_path = tmp_path_factory.mktemp("db") / "test.db"
 
-    app = create_app({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}"
-    })
+    app = create_app(
+        {"TESTING": True, "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}"}
+    )
 
     # La base de test est vide : on crée les tables à partir des modèles
     with app.app_context():
@@ -32,14 +31,13 @@ def client(app):
     with app.test_client() as client:
         yield client
 
+
 # Pour les tests pytests - on ajoute un paramètre --role
 def pytest_addoption(parser):
     parser.addoption(
-        "--role",
-        action="store",
-        default="client",
-        choices=["client", "admin"]
+        "--role", action="store", default="client", choices=["client", "admin"]
     )
+
 
 # On fait une authentification dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
@@ -61,14 +59,11 @@ def auth_headers(app, client):
         url = "/api/auth/register"
         print(f"Appel API : POST {url} — rôle {role}")
 
-        response = client.post(url, json={
-            "email": email,
-            "password": password,
-            "name": f"Test {role}"
-        })
+        response = client.post(
+            url, json={"email": email, "password": password, "name": f"Test {role}"}
+        )
 
         assert response.status_code == 201
-
 
         # On passe le compte en role admin en BDD pour pouvoir tester les fixtures produits
         # Un produit ne peut se créer qu'avec une connexion d'un utilisateur role admin
@@ -84,10 +79,7 @@ def auth_headers(app, client):
         url = "/api/auth/login"
         print(f"Appel API : POST {url} — rôle {role}")
 
-        response = client.post(url, json={
-            "email": email,
-            "password": password
-        })
+        response = client.post(url, json={"email": email, "password": password})
 
         assert response.status_code == 200
 
@@ -100,6 +92,7 @@ def auth_headers(app, client):
 
     return connexion
 
+
 # On créé un produit dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
 def product(app, client, auth_headers):
@@ -109,22 +102,23 @@ def product(app, client, auth_headers):
     url = "/api/produits/"
     print(f"Appel API : POST {url}")
 
-    response = client.post(url, headers=headers, json={
-        "nom": "Clavier de test",
-        "description": "Clavier sans fil",
-        "categorie": "Informatique",
-        "prix": 49.90,
-        "quantite_stock": 10
-    })
+    response = client.post(
+        url,
+        headers=headers,
+        json={
+            "nom": "Clavier de test",
+            "description": "Clavier sans fil",
+            "categorie": "Informatique",
+            "prix": 49.90,
+            "quantite_stock": 10,
+        },
+    )
 
     assert response.status_code == 201
 
     product_id = response.get_json()["id"]
 
-    yield {
-        "id": product_id,
-        "headers": headers
-    }
+    yield {"id": product_id, "headers": headers}
 
     # On supprime le produit car c'est qu'un test
     with app.app_context():

@@ -4,7 +4,6 @@ from digimarket.database import db
 
 
 class User(db.Model):
-
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +12,5 @@ class User(db.Model):
     nom = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="client")
     date_creation = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=lambda: datetime.now(UTC)
-)
+        db.DateTime, nullable=False, default=lambda: datetime.now(UTC)
+    )

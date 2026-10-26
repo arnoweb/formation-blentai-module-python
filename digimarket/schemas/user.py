@@ -9,6 +9,7 @@ class RegisterIn(Schema):
     # Il faut connaitre le role, ce qui est inconnu on l'exclut
     class Meta:
         unknown = EXCLUDE
+
     email = Email(required=True)
     password = String(required=True, load_only=True, validate=Length(min=8))
     name = String(required=True, validate=Length(min=1, max=100))
@@ -35,6 +36,7 @@ class UserOut(Schema):
 
 class TokenOut(Schema):
     access_token = String()
+
 
 class MessageOut(Schema):
     message = String()

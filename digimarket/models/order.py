@@ -3,8 +3,9 @@ from datetime import datetime
 from digimarket.database import db
 
 STATUTS_COMMANDE = ("en_attente", "validee", "expediee", "annulee")
-class Order(db.Model):
 
+
+class Order(db.Model):
     __tablename__ = "order"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -17,15 +18,14 @@ class Order(db.Model):
 
     # Pour une commande, on supprime aussi ces items
     lignes = db.relationship(
-        "OrderItem",
-        back_populates="commande",
-        cascade="all, delete-orphan"
+        "OrderItem", back_populates="commande", cascade="all, delete-orphan"
     )
 
     @property
     def total(self):
-        return round(sum(ligne.quantite * ligne.prix_unitaire for ligne in self.lignes), 2)
-
+        return round(
+            sum(ligne.quantite * ligne.prix_unitaire for ligne in self.lignes), 2
+        )
 
 
 class OrderItem(db.Model):

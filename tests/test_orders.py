@@ -13,12 +13,14 @@ def order(app, client, auth_headers, product):
     url = "/api/commandes"
     print(f"Appel API : POST {url}")
 
-    response = client.post(url, headers=headers, json={
-        "adresse_livraison": "12 rue des Tests, 75000 Paris",
-        "lignes": [
-            {"produit_id": product["id"], "quantite": 2}
-        ]
-    })
+    response = client.post(
+        url,
+        headers=headers,
+        json={
+            "adresse_livraison": "12 rue des Tests, 75000 Paris",
+            "lignes": [{"produit_id": product["id"], "quantite": 2}],
+        },
+    )
 
     assert response.status_code == 201
 
@@ -26,10 +28,10 @@ def order(app, client, auth_headers, product):
 
     yield {
         "id": order_id,
-        "headers": headers,                   # token du client qui a passé la commande
+        "headers": headers,  # token du client qui a passé la commande
         "admin_headers": product["headers"],  # token admin, pour changer le statut
         "product_id": product["id"],
-        "quantite": 2
+        "quantite": 2,
     }
 
     # On supprime la commande car c'est qu'un test (les lignes partent avec, grâce au cascade)
@@ -44,6 +46,7 @@ def order(app, client, auth_headers, product):
 #####################################################
 # CRÉATION ET LECTURE
 #####################################################
+
 
 # Le client retrouve sa commande avec ses lignes et le bon total
 def test_order_detail(client, order):
@@ -69,12 +72,17 @@ def test_order_list_without_token_401(client):
 # STOCK
 #####################################################
 
+
 # On ne peut pas commander plus que le stock disponible
 def test_order_insufficient_stock_409(client, auth_headers, product):
-    response = client.post("/api/commandes", headers=auth_headers("client"), json={
-        "adresse_livraison": "12 rue des Tests, 75000 Paris",
-        "lignes": [{"produit_id": product["id"], "quantite": 999}]
-    })
+    response = client.post(
+        "/api/commandes",
+        headers=auth_headers("client"),
+        json={
+            "adresse_livraison": "12 rue des Tests, 75000 Paris",
+            "lignes": [{"produit_id": product["id"], "quantite": 999}],
+        },
+    )
 
     assert response.status_code == 409
 
@@ -86,11 +94,18 @@ def test_order_validate_then_cancel_restores_stock(client, order):
 
     stock_initial = client.get(url_produit).get_json()["quantite_stock"]
 
-    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "validee"})
+    response = client.patch(
+        url, headers=order["admin_headers"], query_string={"statut": "validee"}
+    )
     assert response.status_code == 200
-    assert client.get(url_produit).get_json()["quantite_stock"] == stock_initial - order["quantite"]
+    assert (
+        client.get(url_produit).get_json()["quantite_stock"]
+        == stock_initial - order["quantite"]
+    )
 
-    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "annulee"})
+    response = client.patch(
+        url, headers=order["admin_headers"], query_string={"statut": "annulee"}
+    )
     assert response.status_code == 200
     assert client.get(url_produit).get_json()["quantite_stock"] == stock_initial
 
@@ -99,12 +114,17 @@ def test_order_validate_then_cancel_restores_stock(client, order):
 # STATUTS
 #####################################################
 
+
 # Une commande annulée ne peut plus changer de statut
 def test_order_invalid_transition_409(client, order):
     url = f"/api/commandes/{order['id']}"
 
-    client.patch(url, headers=order["admin_headers"], query_string={"statut": "annulee"})
-    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "validee"})
+    client.patch(
+        url, headers=order["admin_headers"], query_string={"statut": "annulee"}
+    )
+    response = client.patch(
+        url, headers=order["admin_headers"], query_string={"statut": "validee"}
+    )
 
     assert response.status_code == 409
 
@@ -114,20 +134,22 @@ def test_order_status_as_client_403(client, order):
     response = client.patch(
         f"/api/commandes/{order['id']}",
         headers=order["headers"],
-        query_string={"statut": "validee"}
+        query_string={"statut": "validee"},
     )
 
     assert response.status_code == 403
+
 
 #####################################################
 # UN USER AVEC COMMANDES NE PEUT PAS ETRE DELETE
 #####################################################
 def test_user_with_orders_cannot_be_deleted_409(client, order):
-    commande = client.get(f"/api/commandes/{order['id']}", headers=order["headers"]).get_json()
+    commande = client.get(
+        f"/api/commandes/{order['id']}", headers=order["headers"]
+    ).get_json()
 
     response = client.delete(
-        f"/api/auth/{commande['utilisateur_id']}",
-        headers=order["admin_headers"]
+        f"/api/auth/{commande['utilisateur_id']}", headers=order["admin_headers"]
     )
 
     assert response.status_code == 409

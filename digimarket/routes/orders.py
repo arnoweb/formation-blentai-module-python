@@ -14,10 +14,7 @@ from digimarket.schemas import (
 )
 
 orders_bp = APIBlueprint(
-    "orders",
-    __name__,
-    url_prefix="/api/commandes",
-    tag="Commandes"
+    "orders", __name__, url_prefix="/api/commandes", tag="Commandes"
 )
 
 # Changements de statut autorisés : une commande expédiée ou annulée est terminée
@@ -32,6 +29,7 @@ TRANSITIONS = {
 #####################################################
 # OUTILS
 #####################################################
+
 
 def utilisateur_connecte():
     user = db.session.get(User, int(get_jwt_identity()))
@@ -59,11 +57,15 @@ def commande_accessible(commande_id):
 # LISTE DES COMMANDES
 #####################################################
 
+
 @orders_bp.route("", methods=["GET"])
 @jwt_required()
 @orders_bp.output(OrderOut(many=True))
-@orders_bp.doc(summary="Lister les commandes (toutes pour un admin, les siennes pour un client)",
-               security="BearerAuth", responses=[401])
+@orders_bp.doc(
+    summary="Lister les commandes (toutes pour un admin, les siennes pour un client)",
+    security="BearerAuth",
+    responses=[401],
+)
 def get_orders():
     user = utilisateur_connecte()
 
@@ -80,10 +82,15 @@ def get_orders():
 # DÉTAIL D'UNE COMMANDE
 #####################################################
 
+
 @orders_bp.route("/<int:commande_id>", methods=["GET"])
 @jwt_required()
 @orders_bp.output(OrderDetailOut)
-@orders_bp.doc(summary="Détail d'une commande, avec ses lignes", security="BearerAuth", responses=[401, 404])
+@orders_bp.doc(
+    summary="Détail d'une commande, avec ses lignes",
+    security="BearerAuth",
+    responses=[401, 404],
+)
 def get_order(commande_id):
     return commande_accessible(commande_id)
 
@@ -92,10 +99,13 @@ def get_order(commande_id):
 # LIGNES D'UNE COMMANDE
 #####################################################
 
+
 @orders_bp.route("/<int:commande_id>/lignes", methods=["GET"])
 @jwt_required()
 @orders_bp.output(OrderItemListOut(many=True))
-@orders_bp.doc(summary="Lignes d'une commande", security="BearerAuth", responses=[401, 404])
+@orders_bp.doc(
+    summary="Lignes d'une commande", security="BearerAuth", responses=[401, 404]
+)
 def get_order_lines(commande_id):
     return commande_accessible(commande_id).lignes
 
@@ -104,17 +114,20 @@ def get_order_lines(commande_id):
 # CRÉATION D'UNE COMMANDE
 #####################################################
 
+
 @orders_bp.route("", methods=["POST"])
 @jwt_required()
-@orders_bp.input(OrderCreate, example={
-    "adresse_livraison": "12 rue des Tests, 75000 Paris",
-    "lignes": [
-        {"produit_id": 1, "quantite": 2},
-        {"produit_id": 2, "quantite": 1}
-    ]
-})
+@orders_bp.input(
+    OrderCreate,
+    example={
+        "adresse_livraison": "12 rue des Tests, 75000 Paris",
+        "lignes": [{"produit_id": 1, "quantite": 2}, {"produit_id": 2, "quantite": 1}],
+    },
+)
 @orders_bp.output(OrderDetailOut, status_code=201)
-@orders_bp.doc(summary="Passer une commande", security="BearerAuth", responses=[401, 404, 409])
+@orders_bp.doc(
+    summary="Passer une commande", security="BearerAuth", responses=[401, 404, 409]
+)
 def create_order(json_data):
     user = utilisateur_connecte()
 
@@ -128,7 +141,7 @@ def create_order(json_data):
     commande = Order(
         utilisateur_id=user.id,
         adresse_livraison=json_data["adresse_livraison"],
-        statut="en_attente"
+        statut="en_attente",
     )
 
     for produit_id, quantite in quantites.items():
@@ -139,16 +152,20 @@ def create_order(json_data):
 
         # Vérification du stock à la création (le stock n'est décrémenté qu'à la validation)
         if (produit.quantite_stock or 0) < quantite:
-            abort(409, f"Stock insuffisant pour {produit.nom}", detail={
-                "produit_id": produit.id,
-                "stock_disponible": produit.quantite_stock or 0
-            })
+            abort(
+                409,
+                f"Stock insuffisant pour {produit.nom}",
+                detail={
+                    "produit_id": produit.id,
+                    "stock_disponible": produit.quantite_stock or 0,
+                },
+            )
 
-        commande.lignes.append(OrderItem(
-            produit_id=produit.id,
-            quantite=quantite,
-            prix_unitaire=produit.prix
-        ))
+        commande.lignes.append(
+            OrderItem(
+                produit_id=produit.id, quantite=quantite, prix_unitaire=produit.prix
+            )
+        )
 
     db.session.add(commande)
     db.session.commit()
@@ -160,12 +177,16 @@ def create_order(json_data):
 # ADMIN : MODIFICATION DU STATUT
 #####################################################
 
+
 @orders_bp.route("/<int:commande_id>", methods=["PATCH"])
 @admin_required
 @orders_bp.input(OrderStatusUpdate, location="query")
 @orders_bp.output(OrderOut)
-@orders_bp.doc(summary="Changer le statut d'une commande", security="BearerAuth",
-               responses=[401, 403, 404, 409])
+@orders_bp.doc(
+    summary="Changer le statut d'une commande",
+    security="BearerAuth",
+    responses=[401, 403, 404, 409],
+)
 def update_order_status(commande_id, query_data):
     commande = db.session.get(Order, commande_id)
 
@@ -182,10 +203,14 @@ def update_order_status(commande_id, query_data):
     if nouveau_statut == "validee":
         for ligne in commande.lignes:
             if (ligne.produit.quantite_stock or 0) < ligne.quantite:
-                abort(409, f"Stock insuffisant pour {ligne.produit.nom}", detail={
-                    "produit_id": ligne.produit_id,
-                    "stock_disponible": ligne.produit.quantite_stock or 0
-                })
+                abort(
+                    409,
+                    f"Stock insuffisant pour {ligne.produit.nom}",
+                    detail={
+                        "produit_id": ligne.produit_id,
+                        "stock_disponible": ligne.produit.quantite_stock or 0,
+                    },
+                )
 
         for ligne in commande.lignes:
             ligne.produit.quantite_stock -= ligne.quantite
@@ -193,7 +218,9 @@ def update_order_status(commande_id, query_data):
     # Annulation d'une commande déjà validée : on remet le stock
     if nouveau_statut == "annulee" and ancien_statut == "validee":
         for ligne in commande.lignes:
-            ligne.produit.quantite_stock = (ligne.produit.quantite_stock or 0) + ligne.quantite
+            ligne.produit.quantite_stock = (
+                ligne.produit.quantite_stock or 0
+            ) + ligne.quantite
 
     commande.statut = nouveau_statut
     db.session.commit()

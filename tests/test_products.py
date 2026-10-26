@@ -7,6 +7,7 @@ from digimarket.models import Product
 # LISTE DES PRODUITS
 #####################################################
 
+
 def test_products_list(client, product):
     url = "/api/produits/"
     print(f"Appel API : GET {url}")
@@ -21,11 +22,14 @@ def test_products_list(client, product):
     assert any(p["id"] == product["id"] for p in body["products"])
     assert body["pagination"]["page"] == 1
 
+
 # Les filtres de la liste : catégorie, recherche dans le nom, prix
 def test_products_list_filters(client, product):
     url = "/api/produits/"
 
-    trouve = client.get(url, query_string={"categorie": "Informatique", "nom": "clav", "prix_max": 50}).get_json()
+    trouve = client.get(
+        url, query_string={"categorie": "Informatique", "nom": "clav", "prix_max": 50}
+    ).get_json()
     assert any(p["id"] == product["id"] for p in trouve["products"])
 
     absent = client.get(url, query_string={"prix_min": 100}).get_json()
@@ -39,11 +43,15 @@ def test_products_list_pagination(client, product):
     assert len(body["products"]) <= 1
     assert body["pagination"]["per_page"] == 1
 
-    assert client.get("/api/produits/", query_string={"per_page": 1000}).status_code == 400
+    assert (
+        client.get("/api/produits/", query_string={"per_page": 1000}).status_code == 400
+    )
+
 
 #####################################################
 # DÉTAIL D'UN PRODUIT
 #####################################################
+
 
 def test_product_detail(client, product):
     url = f"/api/produits/{product['id']}"
@@ -67,6 +75,7 @@ def test_product_detail(client, product):
 # CRÉATION D'UN PRODUIT
 #####################################################
 
+
 def test_product_create(app, product):
     # On vérifie en BDD
     with app.app_context():
@@ -85,18 +94,15 @@ def test_product_create(app, product):
 # MODIFICATION D'UN PRODUIT
 #####################################################
 
+
 def test_product_modify(app, client, product):
     url = f"/api/produits/{product['id']}"
-    print(f"Appel API : {"PUT"} {url}")
+    print(f"Appel API : {'PUT'} {url}")
 
     response = client.put(
         url,
         headers=product["headers"],
-        json={
-            "nom": "Clavier modifié",
-            "prix": 39.90,
-            "quantite_stock": 5
-        }
+        json={"nom": "Clavier modifié", "prix": 39.90, "quantite_stock": 5},
     )
 
     assert response.status_code == 200
@@ -124,6 +130,7 @@ def test_product_modify(app, client, product):
 # SUPPRESSION D'UN PRODUIT
 #####################################################
 
+
 def test_product_delete(app, client, product):
     url = f"/api/produits/{product['id']}"
     print(f"Appel API : DELETE {url}")
@@ -148,19 +155,11 @@ def test_product_delete(app, client, product):
 # Utilisateur non connecté
 @pytest.mark.parametrize("method", ["POST", "PUT", "DELETE"])
 def test_product_protection(client, product, method):
-    url = (
-        "/api/produits/"
-        if method == "POST"
-        else f"/api/produits/{product['id']}"
-    )
+    url = "/api/produits/" if method == "POST" else f"/api/produits/{product['id']}"
 
     print(f"Appel API sans token : {method} {url}")
 
-    response = client.open(
-        url,
-        method=method,
-        json={}
-    )
+    response = client.open(url, method=method, json={})
 
     assert response.status_code == 401
 
@@ -168,16 +167,12 @@ def test_product_protection(client, product, method):
 #####################################################
 # ÉCRITURES REFUSÉES POUR UN NON-ADMIN
 #####################################################
-#Utilisateur connecté mais n'a pas le role admin
+# Utilisateur connecté mais n'a pas le role admin
 @pytest.mark.parametrize("method", ["POST", "PUT", "DELETE"])
 def test_create_delete_for_nonadmin(client, product, auth_headers, method):
     headers = auth_headers("client")
 
-    url = (
-        "/api/produits/"
-        if method == "POST"
-        else f"/api/produits/{product['id']}"
-    )
+    url = "/api/produits/" if method == "POST" else f"/api/produits/{product['id']}"
 
     print(f"Appel API non-admin : {method} {url}")
 

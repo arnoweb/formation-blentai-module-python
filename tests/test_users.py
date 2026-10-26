@@ -12,7 +12,7 @@ def user(app, client):
     data = {
         "email": f"user-{uuid4().hex}@example.com",
         "password": "MotDePasse2026!",
-        "name": "Arnaud Breton"
+        "name": "Arnaud Breton",
     }
 
     response = client.post("/api/auth/register", json=data)
@@ -31,10 +31,9 @@ def user(app, client):
 # On connecte l'utilisateur et on prépare le header avec son token
 @pytest.fixture
 def user_headers(client, user):
-    response = client.post("/api/auth/login", json={
-        "email": user["email"],
-        "password": user["password"]
-    })
+    response = client.post(
+        "/api/auth/login", json={"email": user["email"], "password": user["password"]}
+    )
     assert response.status_code == 200
 
     token = response.get_json()["access_token"]
@@ -45,13 +44,14 @@ def user_headers(client, user):
 # INSCRIPTION
 #####################################################
 
+
 # L'inscription crée le compte en base, toujours avec le rôle client
 def test_user_register(app, client):
     data = {
         "email": f"register-{uuid4().hex}@example.com",
         "password": "MotDePasse2026!",
         "name": "Arnaud Breton",
-        "role": "admin"  # doit être ignoré par l'API
+        "role": "admin",  # doit être ignoré par l'API
     }
 
     print("Appel API : POST /api/auth/register")
@@ -74,13 +74,13 @@ def test_user_register(app, client):
 # CONNEXION
 #####################################################
 
+
 # La connexion renvoie un token non vide
 def test_user_login(client, user):
     print("Appel API : POST /api/auth/login")
-    response = client.post("/api/auth/login", json={
-        "email": user["email"],
-        "password": user["password"]
-    })
+    response = client.post(
+        "/api/auth/login", json={"email": user["email"], "password": user["password"]}
+    )
 
     assert response.status_code == 200
 
@@ -93,11 +93,12 @@ def test_user_login(client, user):
 # MODIFICATION
 #####################################################
 
+
 # Un utilisateur connecté peut modifier son propre compte
 def test_user_update_own_account(app, client, user, user_headers):
     data_modify = {
         "email": f"modifie-{uuid4().hex}@example.com",
-        "name": "Arnaud Breton modifié"
+        "name": "Arnaud Breton modifié",
     }
 
     url = f"/api/auth/register/{user['id']}"
@@ -116,6 +117,7 @@ def test_user_update_own_account(app, client, user, user_headers):
 #####################################################
 # PROFIL (/me)
 #####################################################
+
 
 # Sans token, /me doit renvoyer 401
 def test_user_me_without_token_401(client):
@@ -149,9 +151,11 @@ def test_user_list_access(client, auth_headers):
     assert response.status_code == 200
     assert all("password_hash" not in u for u in response.get_json())
 
+
 #####################################################
 # SUPPRESSION
 #####################################################
+
 
 # Un admin peut supprimer un utilisateur, qui disparaît de la base
 def test_user_delete_as_admin(app, client, auth_headers, user):

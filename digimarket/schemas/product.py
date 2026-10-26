@@ -34,7 +34,7 @@ class ProductCreate(ProductUpdate):
 class ProductSummary(Schema):
     id = Integer()
     nom = String()
-    #nom = String(data_key="name") #On change la clef nom en name en sortie de l'API
+    # nom = String(data_key="name") #On change la clef nom en name en sortie de l'API
     categorie = String()
     prix = Float()
 
@@ -43,6 +43,7 @@ class ProductOut(ProductSummary):
     description = String(allow_none=True)
     quantite_stock = Integer()
     date_creation = DateTime()
+
 
 # Paramètres de la liste des produits (dans l'URL : ?page=1&per_page=10&categorie=…)
 class ProductQuery(Schema):
