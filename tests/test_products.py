@@ -1,7 +1,7 @@
 import pytest
-from app import app
-from database import db
-from models import Product
+
+from digimarket.database import db
+from digimarket.models import Product
 
 
 #####################################################
@@ -48,7 +48,7 @@ def test_product_detail(client, product):
 # CRÉATION D'UN PRODUIT
 #####################################################
 
-def test_product_create(product):
+def test_product_create(app, product):
     # On vérifie en BDD
     with app.app_context():
         product = db.session.get(Product, product["id"])
@@ -66,7 +66,7 @@ def test_product_create(product):
 # MODIFICATION D'UN PRODUIT
 #####################################################
 
-def test_product_modify(client, product):
+def test_product_modify(app, client, product):
     url = f"/api/produits/{product['id']}"
     print(f"Appel API : {"PUT"} {url}")
 
@@ -105,7 +105,7 @@ def test_product_modify(client, product):
 # SUPPRESSION D'UN PRODUIT
 #####################################################
 
-def test_product_delete(client, product):
+def test_product_delete(app, client, product):
     url = f"/api/produits/{product['id']}"
     print(f"Appel API : DELETE {url}")
 

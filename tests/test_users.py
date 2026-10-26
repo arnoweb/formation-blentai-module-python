@@ -1,14 +1,14 @@
 import pytest
-from app import app
-from database import db
-from models import User
+
+from digimarket.database import db
+from digimarket.models import User
 from uuid import uuid4
 
 
 
 # On crée un utilisateur dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
-def user(client):
+def user(app, client):
     data = {
         "email": f"user-{uuid4().hex}@example.com",
         "password": "MotDePasse2026!",
@@ -46,7 +46,7 @@ def user_headers(client, user):
 #####################################################
 
 # L'inscription crée le compte en base, toujours avec le rôle client
-def test_user_register(client):
+def test_user_register(app, client):
     data = {
         "email": f"register-{uuid4().hex}@example.com",
         "password": "MotDePasse2026!",
@@ -94,7 +94,7 @@ def test_user_login(client, user):
 #####################################################
 
 # Un utilisateur connecté peut modifier son propre compte
-def test_user_update_own_account(client, user, user_headers):
+def test_user_update_own_account(app, client, user, user_headers):
     data_modify = {
         "email": f"modifie-{uuid4().hex}@example.com",
         "name": "Arnaud Breton modifié"

@@ -2,15 +2,31 @@ import os
 import pytest
 
 from uuid import uuid4
-from app import app
-from database import db
-from models import Product, User
+from digimarket import create_app
+from digimarket.database import db
+from digimarket.models import Product, User
+
+# L'application de test, créée une seule fois pour toute la session pytest,
+# avec sa propre base SQLite dans un dossier temporaire (la vraie base n'est jamais touchée)
+@pytest.fixture(scope="session")
+def app(tmp_path_factory):
+    db_path = tmp_path_factory.mktemp("db") / "test.db"
+
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_path}"
+    })
+
+    # La base de test est vide : on crée les tables à partir des modèles
+    with app.app_context():
+        db.create_all()
+
+    return app
+
 
 # Client Flask de test, partagé par tous les fichiers de tests
 @pytest.fixture
-def client():
-    app.config["TESTING"] = True
-
+def client(app):
     with app.test_client() as client:
         yield client
 
@@ -25,7 +41,7 @@ def pytest_addoption(parser):
 
 # On fait une authentification dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
-def auth_headers(client):
+def auth_headers(app, client):
 
     headers_par_role = {}
 
@@ -84,7 +100,7 @@ def auth_headers(client):
 
 # On créé un produit dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
-def product(client, auth_headers):
+def product(app, client, auth_headers):
     # Connexion utilisateur
     headers = auth_headers("admin")
 

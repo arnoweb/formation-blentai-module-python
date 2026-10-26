@@ -1,6 +1,4 @@
 import pytest
-from app import app # on importe l'application Flask
-
 
 # on déclare le paramètre url pour les tests
 # on teste les routes GET et on vérifie que le status code est 200

@@ -1,5 +1,12 @@
 ##DEMO APP - BLENT.IA - CASE DIGIMARKET - ECOMMERCE WEBSITE
 
+# Base de données SQLITE
+## Liste des utilisateurs
+```sqlite3 instance/digimarket.db "SELECT COUNT(*) FROM user;"```
+
+# Les tests sur l'API se font sur une base temporaire séparée
+```mktemp("db") / "test.db"```
+
 # Lancer les tests de l'API
 ```pytest -v```
 

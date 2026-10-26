@@ -1,13 +1,12 @@
 import pytest
 
-from app import app
-from database import db
-from models import Order
+from digimarket.database import db
+from digimarket.models import Order
 
 
 # On crée une commande dont on a besoin, d'où le fixture qui permet une préparation pour le test
 @pytest.fixture
-def order(client, auth_headers, product):
+def order(app, client, auth_headers, product):
     # Une commande est passée par un client (l'admin sert seulement à créer le produit)
     headers = auth_headers("client")
 

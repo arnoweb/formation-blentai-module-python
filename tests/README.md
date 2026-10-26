@@ -50,6 +50,7 @@ Une fixture prépare ce dont un test a besoin (un client HTTP, un compte connect
 
 | Fixture | Fichier | Fournit |
 |---|---|---|
+| `app` | conftest.py | l'application créée par `create_app()`, avec une base de test vide (une seule fois par session) |
 | `client` | conftest.py | le client de test Flask, pour appeler l'API |
 | `auth_headers` | conftest.py | une fonction `auth_headers("client")` ou `auth_headers("admin")` qui crée un compte, le connecte et renvoie le header `Authorization`. Le compte admin est passé en rôle admin directement en base, car l'API crée toujours des clients. |
 | `product` | conftest.py | un produit créé par un admin : `{"id", "headers"}` (headers admin). Supprimé à la fin du test. |
@@ -120,6 +121,6 @@ user_headers → user → client
 
 ## À savoir
 
-- **Les tests utilisent la vraie base SQLite** (`instance/digimarket.db`). Les produits et les commandes de test sont supprimés à la fin de chaque test, mais **les comptes utilisateurs créés restent en base**.
+- **Les tests utilisent leur propre base SQLite**, créée dans un dossier temporaire à chaque lancement de pytest (fixture `app` dans `conftest.py`). La vraie base `instance/digimarket.db` n'est jamais modifiée.
 - Chaque compte de test a un email unique (`uuid4`), donc les tests peuvent être relancés sans conflit.
 - Une erreur dans une fixture apparaît comme **ERROR** (la préparation a échoué). Une assertion fausse dans un test apparaît comme **FAILED**.
