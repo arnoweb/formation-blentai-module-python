@@ -6,6 +6,7 @@ from sqlalchemy import text
 from digimarket.cli import create_admin
 from digimarket.config import Config
 from digimarket.database import db
+from digimarket.routes.health import health_bp
 from digimarket.routes.orders import orders_bp
 from digimarket.routes.products import products_bp
 from digimarket.routes.users import users_bp
@@ -36,7 +37,8 @@ def create_app(config=None):
         except Exception:
             app.logger.exception("Impossible de se connecter à SQLite")
             raise  # Arrête le démarrage si la connexion échoue.
-
+    
+    app.register_blueprint(health_bp)     
     app.register_blueprint(users_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)

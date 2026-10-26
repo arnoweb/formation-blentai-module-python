@@ -1,10 +1,10 @@
-from apiflask import APIBlueprint, abort
+from apiflask import APIBlueprint, abort, pagination_builder
 
 from sqlalchemy import text
 
 from digimarket.database import db
 from digimarket.models import Product
-from digimarket.schemas import ProductCreate, ProductUpdate, ProductSummary, ProductOut
+from digimarket.schemas import ProductCreate, ProductUpdate, ProductSummary, ProductOut, ProductQuery, ProductPage
 from digimarket.auth import admin_required
 
 products_bp = APIBlueprint(
@@ -30,11 +30,36 @@ def trouver_produit(product_id):
 #####################################################
 
 @products_bp.get("/")
-@products_bp.output(ProductSummary(many=True))
-def get_products():
-    return db.session.execute(
-        db.select(Product).order_by(Product.id)
-    ).scalars().all()
+@products_bp.input(ProductQuery, location="query")
+@products_bp.output(ProductPage)
+@products_bp.doc(summary="Lister les produits (paginé, avec filtres)")
+def get_products(query_data):
+    requete = db.select(Product).order_by(Product.id)
+
+    # Chaque filtre n'est appliqué que s'il est présent dans l'URL
+    if "categorie" in query_data:
+        requete = requete.filter(Product.categorie == query_data["categorie"])
+
+    if "nom" in query_data:
+        requete = requete.filter(Product.nom.ilike(f"%{query_data['nom']}%"))
+
+    if "prix_min" in query_data:
+        requete = requete.filter(Product.prix >= query_data["prix_min"])
+
+    if "prix_max" in query_data:
+        requete = requete.filter(Product.prix <= query_data["prix_max"])
+
+    pagination = db.paginate(
+        requete,
+        page=query_data["page"],
+        per_page=query_data["per_page"],
+        error_out=False
+    )
+
+    return {
+        "products": pagination.items,
+        "pagination": pagination_builder(pagination)
+    }
 
 
 #####################################################

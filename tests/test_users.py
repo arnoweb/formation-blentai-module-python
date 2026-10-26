@@ -136,3 +136,43 @@ def test_user_me_with_token(client, user, user_headers):
     assert resultat["id"] == user["id"]
     assert resultat["email"] == user["email"]
     assert resultat["role"] == "client"
+
+
+#####################################################
+# LISTE DES USERS (/auth)
+#####################################################
+def test_user_list_access(client, auth_headers):
+    assert client.get("/api/auth/").status_code == 401
+    assert client.get("/api/auth/", headers=auth_headers("client")).status_code == 403
+
+    response = client.get("/api/auth/", headers=auth_headers("admin"))
+    assert response.status_code == 200
+    assert all("password_hash" not in u for u in response.get_json())
+
+#####################################################
+# SUPPRESSION
+#####################################################
+
+# Un admin peut supprimer un utilisateur, qui disparaît de la base
+def test_user_delete_as_admin(app, client, auth_headers, user):
+    response = client.delete(f"/api/auth/{user['id']}", headers=auth_headers("admin"))
+
+    assert response.status_code == 204
+
+    with app.app_context():
+        assert db.session.get(User, user["id"]) is None
+
+
+# Sans token 401, avec un token client 403
+def test_user_delete_refused(client, auth_headers, user):
+    url = f"/api/auth/{user['id']}"
+
+    assert client.delete(url).status_code == 401
+    assert client.delete(url, headers=auth_headers("client")).status_code == 403
+
+
+# Supprimer un utilisateur qui n'existe pas renvoie 404
+def test_user_delete_unknown_404(client, auth_headers):
+    response = client.delete("/api/auth/999999", headers=auth_headers("admin"))
+
+    assert response.status_code == 404

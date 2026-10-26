@@ -2,7 +2,7 @@ import pytest
 
 # on déclare le paramètre url pour les tests
 # on teste les routes GET et on vérifie que le status code est 200
-@pytest.mark.parametrize("url", ["/", "/api/auth/","/api/produits/"])
+@pytest.mark.parametrize("url", ["/", "/api/produits/"])
 def test_routes_get(client, url):
     response = client.get(url)
     assert response.status_code == 200

@@ -19,3 +19,26 @@ class Config:
 
     # Les erreurs de validation des schémas renvoient 400
     VALIDATION_ERROR_STATUS_CODE = 400
+
+    # Documentation Swagger : texte affiché sous le titre (Markdown accepté)
+    DESCRIPTION = """
+API e-commerce **DigiMarket** : catalogue de produits, comptes utilisateurs et commandes.
+
+## Authentification
+1. Connectez-vous avec `POST /api/auth/login` pour obtenir un `access_token`.
+2. Cliquez sur **Authorize** et collez le token, sans `Bearer` devant.
+3. Le token est valable **15 minutes**.
+
+## Rôles
+- **client** : consulte les produits, passe et suit ses commandes.
+- **admin** : gère les produits, les utilisateurs et le statut des commandes.
+
+## Codes de réponse
+| Code | Signification |
+|---|---|
+| 400 | données invalides |
+| 401 | non connecté ou token expiré |
+| 403 | connecté, mais pas les droits |
+| 404 | ressource introuvable |
+| 409 | conflit (stock insuffisant, transition de statut interdite…) |
+"""

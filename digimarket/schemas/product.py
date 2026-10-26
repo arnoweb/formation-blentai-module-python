@@ -1,6 +1,6 @@
 # Schémas des produits : format du JSON entrant et sortant
-from apiflask import Schema
-from apiflask.fields import Integer, String, Float, DateTime
+from apiflask import Schema, PaginationSchema
+from apiflask.fields import Integer, String, Float, DateTime, List, Nested
 from apiflask.validators import Length, Range
 from marshmallow import pre_load
 
@@ -35,11 +35,26 @@ class ProductSummary(Schema):
     id = Integer()
     nom = String()
     #nom = String(data_key="name") #On change la clef nom en name en sortie de l'API
+    categorie = String()
     prix = Float()
 
 
 class ProductOut(ProductSummary):
     description = String(allow_none=True)
-    categorie = String()
     quantite_stock = Integer()
     date_creation = DateTime()
+
+# Paramètres de la liste des produits (dans l'URL : ?page=1&per_page=10&categorie=…)
+class ProductQuery(Schema):
+    page = Integer(load_default=1, validate=Range(min=1))
+    per_page = Integer(load_default=10, validate=Range(min=1, max=100))
+    categorie = String()
+    nom = String()
+    prix_min = Float(validate=Range(min=0))
+    prix_max = Float(validate=Range(min=0))
+
+
+# Une page de produits + les informations de pagination
+class ProductPage(Schema):
+    products = List(Nested(ProductSummary))
+    pagination = Nested(PaginationSchema)

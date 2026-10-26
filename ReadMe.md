@@ -1,8 +1,21 @@
 ##DEMO APP - BLENT.IA - CASE DIGIMARKET - ECOMMERCE WEBSITE
 
+# Vérification si l'API répond
+```curl -i http://localhost:5001/health```
+
+
+# Créer un compte admin (ce qui n'est pas possible via l'API)
+```flask --app digimarket create-admin admin@test.fr XXXXXXXX```
+
 # Base de données SQLITE
 ## Liste des utilisateurs
-```sqlite3 instance/digimarket.db "SELECT COUNT(*) FROM user;"```
+```sqlite3 -header -column instance/digimarket.db "SELECT id, email, nom, role, date_creation FROM user ORDER BY id;"```
+
+## Liste des utilisateurs admin
+```sqlite3 -header -column instance/digimarket.db "SELECT id, email, nom FROM user WHERE role = 'admin';"```
+
+## Suppression des comptes users
+```sqlite3 instance/digimarket.db "DELETE FROM user WHERE email LIKE 'admin-%' OR email LIKE 'client-%' OR email LIKE 'user-%' OR email LIKE 'modifie-%' OR email LIKE 'register-%';"```
 
 # Les tests sur l'API se font sur une base temporaire séparée
 ```mktemp("db") / "test.db"```

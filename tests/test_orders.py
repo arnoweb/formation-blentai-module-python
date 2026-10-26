@@ -22,7 +22,7 @@ def order(app, client, auth_headers, product):
 
     assert response.status_code == 201
 
-    order_id = response.get_json()["commande"]["id"]
+    order_id = response.get_json()["id"]
 
     yield {
         "id": order_id,
@@ -86,11 +86,11 @@ def test_order_validate_then_cancel_restores_stock(client, order):
 
     stock_initial = client.get(url_produit).get_json()["quantite_stock"]
 
-    response = client.patch(url, headers=order["admin_headers"], json={"statut": "validee"})
+    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "validee"})
     assert response.status_code == 200
     assert client.get(url_produit).get_json()["quantite_stock"] == stock_initial - order["quantite"]
 
-    response = client.patch(url, headers=order["admin_headers"], json={"statut": "annulee"})
+    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "annulee"})
     assert response.status_code == 200
     assert client.get(url_produit).get_json()["quantite_stock"] == stock_initial
 
@@ -103,8 +103,8 @@ def test_order_validate_then_cancel_restores_stock(client, order):
 def test_order_invalid_transition_409(client, order):
     url = f"/api/commandes/{order['id']}"
 
-    client.patch(url, headers=order["admin_headers"], json={"statut": "annulee"})
-    response = client.patch(url, headers=order["admin_headers"], json={"statut": "validee"})
+    client.patch(url, headers=order["admin_headers"], query_string={"statut": "annulee"})
+    response = client.patch(url, headers=order["admin_headers"], query_string={"statut": "validee"})
 
     assert response.status_code == 409
 
@@ -114,7 +114,20 @@ def test_order_status_as_client_403(client, order):
     response = client.patch(
         f"/api/commandes/{order['id']}",
         headers=order["headers"],
-        json={"statut": "validee"}
+        query_string={"statut": "validee"}
     )
 
     assert response.status_code == 403
+
+#####################################################
+# UN USER AVEC COMMANDES NE PEUT PAS ETRE DELETE
+#####################################################
+def test_user_with_orders_cannot_be_deleted_409(client, order):
+    commande = client.get(f"/api/commandes/{order['id']}", headers=order["headers"]).get_json()
+
+    response = client.delete(
+        f"/api/auth/{commande['utilisateur_id']}",
+        headers=order["admin_headers"]
+    )
+
+    assert response.status_code == 409

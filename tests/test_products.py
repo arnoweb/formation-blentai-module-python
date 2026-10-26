@@ -16,11 +16,31 @@ def test_products_list(client, product):
 
     assert response.status_code == 200
 
-    products = response.get_json()
+    body = response.get_json()
 
-    assert isinstance(products, list)
-    assert any(p["id"] == product["id"] for p in products)
+    assert isinstance(body["products"], list)
+    assert any(p["id"] == product["id"] for p in body["products"])
+    assert body["pagination"]["page"] == 1
 
+# Les filtres de la liste : catégorie, recherche dans le nom, prix
+def test_products_list_filters(client, product):
+    url = "/api/produits/"
+
+    trouve = client.get(url, query_string={"categorie": "Informatique", "nom": "clav", "prix_max": 50}).get_json()
+    assert any(p["id"] == product["id"] for p in trouve["products"])
+
+    absent = client.get(url, query_string={"prix_min": 100}).get_json()
+    assert all(p["id"] != product["id"] for p in absent["products"])
+
+
+# per_page limite le nombre de produits renvoyés, et une valeur trop grande est refusée
+def test_products_list_pagination(client, product):
+    body = client.get("/api/produits/", query_string={"per_page": 1}).get_json()
+
+    assert len(body["products"]) <= 1
+    assert body["pagination"]["per_page"] == 1
+
+    assert client.get("/api/produits/", query_string={"per_page": 1000}).status_code == 400
 
 #####################################################
 # DÉTAIL D'UN PRODUIT

@@ -1,14 +1,19 @@
-from flask import Blueprint, jsonify, request
+# Routes des commandes : liste, détail, création, changement de statut
+from apiflask import APIBlueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from digimarket.database import db
-from digimarket.models import User, Product, Order, OrderItem, STATUTS_COMMANDE
 from digimarket.auth import admin_required
+from digimarket.database import db
+from digimarket.models import User, Product, Order, OrderItem
+from digimarket.schemas import (
+    OrderCreate, OrderStatusUpdate, OrderOut, OrderDetailOut, OrderItemListOut
+)
 
-orders_bp = Blueprint(
+orders_bp = APIBlueprint(
     "orders",
     __name__,
-    url_prefix="/api/commandes"
+    url_prefix="/api/commandes",
+    tag="Commandes"
 )
 
 # Changements de statut autorisés : une commande expédiée ou annulée est terminée
@@ -25,59 +30,25 @@ TRANSITIONS = {
 #####################################################
 
 def utilisateur_connecte():
-    return db.session.get(User, int(get_jwt_identity()))
+    user = db.session.get(User, int(get_jwt_identity()))
 
-# On transforme l'objet en dictionnaire 
-# Dans l'API on retourne du JSON via jsonify
-# Et jsonify ne sait pas convertir un objet SQLAlechemy
-# Avantage : si un champ change dans la base, la donnée renvoyée dans l'API est la même
-def ligne_en_dict(ligne):
-    return {
-        "id": ligne.id,
-        "produit_id": ligne.produit_id,
-        "produit_nom": ligne.produit.nom if ligne.produit else None,
-        "quantite": ligne.quantite,
-        "prix_unitaire": ligne.prix_unitaire,
-        "sous_total": round(ligne.quantite * ligne.prix_unitaire, 2)
-    }
+    if user is None:
+        abort(401, "Utilisateur introuvable")
 
-# Affichage ou non des produits de chaque commande
-# La liste de commandes peut être avec ou sans la liste des produits commandés
-def commande_en_dict(commande, avec_lignes=False):
-    resultat = {
-        "id": commande.id,
-        "utilisateur_id": commande.utilisateur_id,
-        "date_commande": (
-            commande.date_commande.isoformat()
-            if commande.date_commande else None
-        ),
-        "adresse_livraison": commande.adresse_livraison,
-        "statut": commande.statut,
-        "total": commande.total
-    }
-    # Detail de la commande
-    if avec_lignes:
-        resultat["lignes"] = [ligne_en_dict(ligne) for ligne in commande.lignes]
-
-    return resultat
+    return user
 
 
 def commande_accessible(commande_id):
-
     user = utilisateur_connecte()
-
-    if user is None:
-        return None, (jsonify({"error": "Utilisateur introuvable"}), 401)
-
     commande = db.session.get(Order, commande_id)
 
-    # Commandes visibles que pour l'utilisateur connecté ou l'admin (qui voit tout)
+    # Un client ne voit que ses commandes : 404 pour ne pas révéler celles des autres
     if commande is None or (
         user.role != "admin" and commande.utilisateur_id != user.id
     ):
-        return None, (jsonify({"error": "Commande introuvable"}), 404)
+        abort(404, "Commande introuvable")
 
-    return user, commande
+    return commande
 
 
 #####################################################
@@ -86,11 +57,11 @@ def commande_accessible(commande_id):
 
 @orders_bp.route("", methods=["GET"])
 @jwt_required()
+@orders_bp.output(OrderOut(many=True))
+@orders_bp.doc(summary="Lister les commandes (toutes pour un admin, les siennes pour un client)",
+               security="BearerAuth", responses=[401])
 def get_orders():
     user = utilisateur_connecte()
-
-    if user is None:
-        return jsonify({"error": "Utilisateur introuvable"}), 401
 
     requete = db.select(Order).order_by(Order.date_commande.desc())
 
@@ -98,9 +69,7 @@ def get_orders():
     if user.role != "admin":
         requete = requete.filter_by(utilisateur_id=user.id)
 
-    commandes = db.session.execute(requete).scalars().all()
-
-    return jsonify([commande_en_dict(c) for c in commandes]), 200
+    return db.session.execute(requete).scalars().all()
 
 
 #####################################################
@@ -109,13 +78,10 @@ def get_orders():
 
 @orders_bp.route("/<int:commande_id>", methods=["GET"])
 @jwt_required()
+@orders_bp.output(OrderDetailOut)
+@orders_bp.doc(summary="Détail d'une commande, avec ses lignes", security="BearerAuth", responses=[401, 404])
 def get_order(commande_id):
-    user, commande = commande_accessible(commande_id)
-
-    if user is None:
-        return commande
-
-    return jsonify(commande_en_dict(commande, avec_lignes=True)), 200
+    return commande_accessible(commande_id)
 
 
 #####################################################
@@ -124,13 +90,10 @@ def get_order(commande_id):
 
 @orders_bp.route("/<int:commande_id>/lignes", methods=["GET"])
 @jwt_required()
+@orders_bp.output(OrderItemListOut(many=True))
+@orders_bp.doc(summary="Lignes d'une commande", security="BearerAuth", responses=[401, 404])
 def get_order_lines(commande_id):
-    user, commande = commande_accessible(commande_id)
-
-    if user is None:
-        return commande
-
-    return jsonify([ligne_en_dict(ligne) for ligne in commande.lignes]), 200
+    return commande_accessible(commande_id).lignes
 
 
 #####################################################
@@ -139,62 +102,28 @@ def get_order_lines(commande_id):
 
 @orders_bp.route("", methods=["POST"])
 @jwt_required()
-def create_order():
+@orders_bp.input(OrderCreate, example={
+    "adresse_livraison": "12 rue des Tests, 75000 Paris",
+    "lignes": [
+        {"produit_id": 1, "quantite": 2},
+        {"produit_id": 2, "quantite": 1}
+    ]
+})
+@orders_bp.output(OrderDetailOut, status_code=201)
+@orders_bp.doc(summary="Passer une commande", security="BearerAuth", responses=[401, 404, 409])
+def create_order(json_data):
     user = utilisateur_connecte()
 
-    if user is None:
-        return jsonify({"error": "Utilisateur introuvable"}), 401
-
-    data = request.get_json(silent=True)
-
-    if not isinstance(data, dict):
-        return jsonify({"error": "Un objet JSON est attendu"}), 400
-
-    adresse = data.get("adresse_livraison")
-
-    if not isinstance(adresse, str) or not adresse.strip():
-        return jsonify({"error": "Adresse de livraison requise"}), 400
-
-    lignes = data.get("lignes")
-
-    if not isinstance(lignes, list) or not lignes:
-        return jsonify({"error": "La commande doit contenir au moins un produit"}), 400
-
-    # Regroupement des quantites du même produit d'une commande
+    # On regroupe les quantités si un même produit apparaît plusieurs fois
     quantites = {}
 
-    # Exemple d'entrée :
-    #   "lignes": [
-    #       { "produit_id": 4, "quantite": 2 },
-    #       { "produit_id": 7, "quantite": 1 },
-    #       { "produit_id": 4, "quantite": 3 }
-    #   ]
-    for ligne in lignes:
-        # Vérification que c'est un objet JSON
-        # C'est la technique de la clause de garde (plutôt que if else)
-        if not isinstance(ligne, dict):
-            return jsonify({"error": "Ligne de commande invalide"}), 400
-
-        produit_id = ligne.get("produit_id")
-        quantite = ligne.get("quantite")
-
-        # On check si produit, quantite est un entier
-        # On check si produit, quantite n'est pas un boolean
-        # Ce 2ème check est nécessaire car un Bolean True, False est un entier déguisé
-        if (
-            not isinstance(produit_id, int) or isinstance(produit_id, bool)
-            or not isinstance(quantite, int) or isinstance(quantite, bool)
-            or quantite <= 0
-        ):
-            return jsonify({
-                "error": "Chaque ligne doit avoir un produit_id et une quantite entière positive"
-            }), 400
-
-        quantites[produit_id] = quantites.get(produit_id, 0) + quantite
+    for ligne in json_data["lignes"]:
+        produit_id = ligne["produit_id"]
+        quantites[produit_id] = quantites.get(produit_id, 0) + ligne["quantite"]
 
     commande = Order(
         utilisateur_id=user.id,
-        adresse_livraison=adresse.strip(),
+        adresse_livraison=json_data["adresse_livraison"],
         statut="en_attente"
     )
 
@@ -202,16 +131,14 @@ def create_order():
         produit = db.session.get(Product, produit_id)
 
         if produit is None:
-            return jsonify({"error": f"Produit {produit_id} introuvable"}), 404
+            abort(404, f"Produit {produit_id} introuvable")
 
-        # Vérification du stock à la création
-        # le stock n'est décrémenté qu'à la validation
+        # Vérification du stock à la création (le stock n'est décrémenté qu'à la validation)
         if (produit.quantite_stock or 0) < quantite:
-            return jsonify({
-                "error": f"Stock insuffisant pour {produit.nom}",
+            abort(409, f"Stock insuffisant pour {produit.nom}", detail={
                 "produit_id": produit.id,
                 "stock_disponible": produit.quantite_stock or 0
-            }), 409
+            })
 
         commande.lignes.append(OrderItem(
             produit_id=produit.id,
@@ -222,50 +149,39 @@ def create_order():
     db.session.add(commande)
     db.session.commit()
 
-    return jsonify({
-        "message": "Commande créée",
-        "commande": commande_en_dict(commande, avec_lignes=True)
-    }), 201
+    return commande
 
 
 #####################################################
 # ADMIN : MODIFICATION DU STATUT
 #####################################################
+
 @orders_bp.route("/<int:commande_id>", methods=["PATCH"])
 @admin_required
-def update_order_status(commande_id):
+@orders_bp.input(OrderStatusUpdate, location="query")
+@orders_bp.output(OrderOut)
+@orders_bp.doc(summary="Changer le statut d'une commande", security="BearerAuth",
+               responses=[401, 403, 404, 409])
+def update_order_status(commande_id, query_data):
     commande = db.session.get(Order, commande_id)
 
     if commande is None:
-        return jsonify({"error": "Commande introuvable"}), 404
+        abort(404, "Commande introuvable")
 
-    data = request.get_json(silent=True)
-    # Ternaire
-    nouveau_statut = data.get("statut") if isinstance(data, dict) else None
-
-    if nouveau_statut not in STATUTS_COMMANDE:
-        return jsonify({
-            "error": "Statut invalide",
-            "statuts_possibles": list(STATUTS_COMMANDE)
-        }), 400
-
+    nouveau_statut = query_data["statut"]
     ancien_statut = commande.statut or "en_attente"
 
     if nouveau_statut not in TRANSITIONS[ancien_statut]:
-        return jsonify({
-            "error": f"Impossible de passer de '{ancien_statut}' à '{nouveau_statut}'"
-        }), 409
+        abort(409, f"Impossible de passer de '{ancien_statut}' à '{nouveau_statut}'")
 
-    # Validation : on revérifie le stock qui a pu baisser depuis la création
-    #  puis on le décrémente
+    # Validation : on revérifie le stock (il a pu baisser depuis la création) puis on le décrémente
     if nouveau_statut == "validee":
         for ligne in commande.lignes:
             if (ligne.produit.quantite_stock or 0) < ligne.quantite:
-                return jsonify({
-                    "error": f"Stock insuffisant pour {ligne.produit.nom}",
+                abort(409, f"Stock insuffisant pour {ligne.produit.nom}", detail={
                     "produit_id": ligne.produit_id,
                     "stock_disponible": ligne.produit.quantite_stock or 0
-                }), 409
+                })
 
         for ligne in commande.lignes:
             ligne.produit.quantite_stock -= ligne.quantite
@@ -278,7 +194,4 @@ def update_order_status(commande_id):
     commande.statut = nouveau_statut
     db.session.commit()
 
-    return jsonify({
-        "message": "Statut modifié",
-        "commande": commande_en_dict(commande)
-    }), 200
+    return commande
