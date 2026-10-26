@@ -1,4 +1,4 @@
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask&logoColor=white)![APIFlask](https://img.shields.io/badge/APIFlask-3.1-2F9E44)![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1-D71F00?logo=sqlalchemy&logoColor=white)![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)![pytest](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask&logoColor=white)![APIFlask](https://img.shields.io/badge/APIFlask-3.1-2F9E44)![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1-D71F00?logo=sqlalchemy&logoColor=white)![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)![JWT](https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=white)![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)![pytest](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)![Ruff](https://img.shields.io/badge/lint-Ruff-D7FF64?logo=ruff&logoColor=black)
 
 # API REST E-commerce avec Flask
 ### **Formation Blent.ai - nov 2026 · Examen du module Python**
@@ -316,3 +316,10 @@ chmod +x .git/hooks/pre-commit
 ```
 
 Pour vérifier **tous** les tests avant chaque commit, remplacer la dernière ligne par `.venv/bin/python -m pytest -v`.
+
+### QA - LINTER RUFF
+
+Le code est vérifié avec [Ruff](https://docs.astral.sh/ruff/) (imports inutilisés, tri des imports, syntaxe moderne) :
+
+- vérifier : `ruff check .`
+- corriger automatiquement : `ruff check . --fix`

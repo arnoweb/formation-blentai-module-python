@@ -1,12 +1,19 @@
 # Routes des utilisateurs : inscription, connexion, profil, modification
 from apiflask import APIBlueprint, abort
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from digimarket.auth import admin_required
 from digimarket.database import db
 from digimarket.models import Order, User
-from digimarket.schemas import RegisterIn, LoginIn, UserUpdate, UserOut, TokenOut, MessageOut
+from digimarket.schemas import (
+    LoginIn,
+    MessageOut,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+    UserUpdate,
+)
 
 users_bp = APIBlueprint("users", __name__, url_prefix="/api/auth", tag="Utilisateurs")
 

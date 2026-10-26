@@ -1,6 +1,6 @@
 # Schémas des produits : format du JSON entrant et sortant
-from apiflask import Schema, PaginationSchema
-from apiflask.fields import Integer, String, Float, DateTime, List, Nested
+from apiflask import PaginationSchema, Schema
+from apiflask.fields import DateTime, Float, Integer, List, Nested, String
 from apiflask.validators import Length, Range
 from marshmallow import pre_load
 

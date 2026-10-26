@@ -1,9 +1,9 @@
+from uuid import uuid4
+
 import pytest
 
 from digimarket.database import db
 from digimarket.models import User
-from uuid import uuid4
-
 
 
 # On crée un utilisateur dont on a besoin, d'où le fixture qui permet une préparation pour le test

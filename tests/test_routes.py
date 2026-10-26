@@ -1,5 +1,6 @@
 import pytest
 
+
 # on déclare le paramètre url pour les tests
 # on teste les routes GET et on vérifie que le status code est 200
 @pytest.mark.parametrize("url", ["/", "/api/produits/"])

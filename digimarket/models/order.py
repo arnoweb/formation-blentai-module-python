@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from digimarket.database import db
 
 STATUTS_COMMANDE = ("en_attente", "validee", "expediee", "annulee")

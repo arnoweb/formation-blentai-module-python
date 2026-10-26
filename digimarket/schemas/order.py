@@ -1,7 +1,7 @@
 # Schémas des commandes : format du JSON entrant et sortant
 from apiflask import Schema
-from apiflask.fields import Integer, String, Float, DateTime, List, Nested, Function
-from apiflask.validators import Length, Range, OneOf
+from apiflask.fields import DateTime, Float, Function, Integer, List, Nested, String
+from apiflask.validators import Length, OneOf, Range
 from marshmallow import pre_load
 
 from digimarket.models import STATUTS_COMMANDE

@@ -1,11 +1,16 @@
 from apiflask import APIBlueprint, abort, pagination_builder
-
 from sqlalchemy import text
 
+from digimarket.auth import admin_required
 from digimarket.database import db
 from digimarket.models import Product
-from digimarket.schemas import ProductCreate, ProductUpdate, ProductSummary, ProductOut, ProductQuery, ProductPage
-from digimarket.auth import admin_required
+from digimarket.schemas import (
+    ProductCreate,
+    ProductOut,
+    ProductPage,
+    ProductQuery,
+    ProductUpdate,
+)
 
 products_bp = APIBlueprint(
     "products",

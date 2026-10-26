@@ -3,7 +3,6 @@ import pytest
 from digimarket.database import db
 from digimarket.models import Product
 
-
 #####################################################
 # LISTE DES PRODUITS
 #####################################################

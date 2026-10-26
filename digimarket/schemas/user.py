@@ -1,8 +1,8 @@
 # Schémas des utilisateurs : format du JSON entrant et sortant
-from marshmallow import EXCLUDE
 from apiflask import Schema
-from apiflask.fields import Integer, String, Email
+from apiflask.fields import Email, Integer, String
 from apiflask.validators import Length
+from marshmallow import EXCLUDE
 
 
 class RegisterIn(Schema):

@@ -1,5 +1,8 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from digimarket.database import db
+
+
 class Product(db.Model):
 
     __tablename__ = "product"
@@ -13,5 +16,5 @@ class Product(db.Model):
     date_creation = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(timezone.utc)
+        default=lambda: datetime.now(UTC)
     )

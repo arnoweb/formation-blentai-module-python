@@ -1,8 +1,50 @@
 # Package des schémas
 from digimarket.schemas.health import HealthOut
-from digimarket.schemas.product import ProductUpdate, ProductCreate, ProductSummary, ProductOut, ProductQuery, ProductPage
-from digimarket.schemas.user import RegisterIn, LoginIn, UserUpdate, UserOut, TokenOut, MessageOut
 from digimarket.schemas.order import (
-    OrderItemIn, OrderCreate, OrderStatusUpdate,
-    OrderItemOut, OrderItemListOut, OrderOut, OrderDetailOut
+    OrderCreate,
+    OrderDetailOut,
+    OrderItemIn,
+    OrderItemListOut,
+    OrderItemOut,
+    OrderOut,
+    OrderStatusUpdate,
 )
+from digimarket.schemas.product import (
+    ProductCreate,
+    ProductOut,
+    ProductPage,
+    ProductQuery,
+    ProductSummary,
+    ProductUpdate,
+)
+from digimarket.schemas.user import (
+    LoginIn,
+    MessageOut,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+    UserUpdate,
+)
+
+__all__ = [
+    "HealthOut",
+    "LoginIn",
+    "MessageOut",
+    "OrderCreate",
+    "OrderDetailOut",
+    "OrderItemIn",
+    "OrderItemListOut",
+    "OrderItemOut",
+    "OrderOut",
+    "OrderStatusUpdate",
+    "ProductCreate",
+    "ProductOut",
+    "ProductPage",
+    "ProductQuery",
+    "ProductSummary",
+    "ProductUpdate",
+    "RegisterIn",
+    "TokenOut",
+    "UserOut",
+    "UserUpdate",
+]

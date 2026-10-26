@@ -1,10 +1,12 @@
 import os
+from uuid import uuid4
+
 import pytest
 
-from uuid import uuid4
 from digimarket import create_app
 from digimarket.database import db
 from digimarket.models import Product, User
+
 
 # L'application de test, créée une seule fois pour toute la session pytest,
 # avec sa propre base SQLite dans un dossier temporaire (la vraie base n'est jamais touchée)

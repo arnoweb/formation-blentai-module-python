@@ -1,12 +1,16 @@
 # Routes des commandes : liste, détail, création, changement de statut
 from apiflask import APIBlueprint, abort
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from digimarket.auth import admin_required
 from digimarket.database import db
-from digimarket.models import User, Product, Order, OrderItem
+from digimarket.models import Order, OrderItem, Product, User
 from digimarket.schemas import (
-    OrderCreate, OrderStatusUpdate, OrderOut, OrderDetailOut, OrderItemListOut
+    OrderCreate,
+    OrderDetailOut,
+    OrderItemListOut,
+    OrderOut,
+    OrderStatusUpdate,
 )
 
 orders_bp = APIBlueprint(

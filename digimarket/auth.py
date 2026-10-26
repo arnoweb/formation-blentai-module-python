@@ -1,8 +1,11 @@
+from functools import wraps
+
+from apiflask import abort
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from digimarket.database import db
 from digimarket.models import User
-from apiflask import abort
-from functools import wraps
-from flask_jwt_extended import jwt_required, get_jwt_identity
+
 
 #####################################################
 # CHECK SI ADMIN
