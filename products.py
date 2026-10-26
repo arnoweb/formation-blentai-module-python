@@ -72,7 +72,7 @@ def get_product(product_id):
 #####################################################
 
 @products_bp.post("/")
-@admin_required
+@admin_required # Seul un admin a le droit de créer un produit
 @products_bp.input(ProductCreate)
 @products_bp.output(ProductOut, status_code=201)
 @products_bp.doc(security="BearerAuth", responses=[401, 403])

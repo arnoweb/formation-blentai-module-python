@@ -51,6 +51,7 @@ def get_current_user():
 
 # Modification d'un utilisateur
 @users_bp.route("/register/<int:user_id>", methods=["PUT"])
+@jwt_required()  # Verification validité du Token 
 def update_user(user_id):
     # On ne peut modifier que son propre compte
     if int(get_jwt_identity()) != user_id:

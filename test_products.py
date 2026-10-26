@@ -1,11 +1,10 @@
 import os
-from uuid import uuid4
-
 import pytest
 
+from uuid import uuid4
 from app import app
 from database import db
-from models import Product
+from models import Product, User
 
 
 @pytest.fixture
@@ -38,11 +37,21 @@ def auth_headers(client):
         response = client.post(url, json={
             "email": email,
             "password": password,
-            "name": f"Test {role}",
-            "role": role
+            "name": f"Test {role}"
         })
 
         assert response.status_code == 201
+
+
+        # On passe le compte en role admin en BDD pour pouvoir tester les fixtures produits
+        # Un produit ne peut se créer qu'avec une connexion d'un utilisateur role admin
+        if role == "admin":
+            with app.app_context():
+                user = db.session.execute(
+                    db.select(User).filter_by(email=email)
+                ).scalar_one()
+                user.role = "admin"
+                db.session.commit()
 
         # On Connecte l'utilisateur pour récupérer son  rôle
         url = "/api/auth/login"
@@ -179,9 +188,9 @@ def test_modification_produit(client, produit):
 
     resultat = response.get_json()
 
-    assert resultat["produit"]["id"] == produit["id"]
-    assert resultat["produit"]["nom"] == "Clavier modifié"
-    assert resultat["produit"]["prix"] == 39.90
+    assert resultat["id"] == produit["id"]
+    assert resultat["nom"] == "Clavier modifié"
+    assert resultat["prix"] == 39.90
 
     with app.app_context():
         product = db.session.get(Product, produit["id"])
