@@ -1,9 +1,15 @@
 ##DEMO APP - BLENT.IA - CASE DIGIMARKET - ECOMMERCE WEBSITE
 
 # Lancer les tests de l'API
-pytest -v
+```pytest -v```
 
-# Lancer les tests de l'API - endpoint 
+# Lancer les tests de l'API - endpoint
+```
+pytest test_routes.py -v
+pytest test_users.py -v 
+pytest test_products.py -v
+pytest test_orders.py -v
+```
 
 # On test la création d'un utilisateur dont le role est client ou admin
 # Cela créé une entrée dans la base
