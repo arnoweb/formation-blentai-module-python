@@ -179,7 +179,6 @@ def test_modification_produit(client, produit):
 
     resultat = response.get_json()
 
-    assert resultat["message"] == "Produit modifié"
     assert resultat["produit"]["id"] == produit["id"]
     assert resultat["produit"]["nom"] == "Clavier modifié"
     assert resultat["produit"]["prix"] == 39.90
@@ -207,11 +206,7 @@ def test_suppression_produit(client, produit):
 
     response = client.delete(url, headers=produit["headers"])
 
-    assert response.status_code == 200
-    assert response.get_json() == {
-        "message": "Produit supprimé",
-        "id": produit["id"]
-    }
+    assert response.status_code == 204
 
     # Vérifie la suppression réelle en base
     with app.app_context():

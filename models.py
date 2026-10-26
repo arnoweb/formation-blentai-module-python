@@ -1,26 +1,16 @@
+# Model de la base - on décrit les tables et champs
 from database import db
 from datetime import datetime, timezone
 
 class User(db.Model):
-    # Nom de la table déjà présente dans SQLite.
+
     __tablename__ = "user"
 
-    # Identifiant unique de chaque utilisateur.
     id = db.Column(db.Integer, primary_key=True)
-
-    # Adresse obligatoire et unique.
     email = db.Column(db.String(120), unique=True, nullable=False)
-
-    # Mot de passe obligatoire et unique.
     password_hash = db.Column(db.String(120), unique=True, nullable=False)
-
-    # Nom obligatoire.
     nom = db.Column(db.String(100), nullable=False)
-
-    # Role Client ou Admin et on met client par défaut
     role = db.Column(db.String(20), nullable=False, default="client")
-
-    # Date de création de l'utilisateur
     date_creation = db.Column(
         db.DateTime,
         nullable=False,
@@ -52,7 +42,7 @@ from database import db
 
 STATUTS_COMMANDE = ("en_attente", "validee", "expediee", "annulee")
 class Order(db.Model):
-    # Nom de table explicite : "order" est un mot réservé SQL
+
     __tablename__ = "order"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -63,7 +53,7 @@ class Order(db.Model):
 
     utilisateur = db.relationship("User", backref="commandes")
 
-    # Supprimer une commande supprime ses lignes
+    # Pour une commande, on supprime aussi ces items
     lignes = db.relationship(
         "OrderItem",
         back_populates="commande",
@@ -86,7 +76,7 @@ class OrderItem(db.Model):
     commande_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
     produit_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     quantite = db.Column(db.Integer, nullable=False)
-    # Prix au moment de la commande : il ne bouge pas si le prix du produit change ensuite
+    # Prix au moment de la commande
     prix_unitaire = db.Column(db.Float, nullable=False)
 
     commande = db.relationship("Order", back_populates="lignes")

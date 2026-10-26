@@ -1,5 +1,5 @@
+# Pour les tests pytests - on ajoute un paramètre --role
 def pytest_addoption(parser):
-    # Déclare une option utilisable dans le terminal.
     parser.addoption(
         "--role",
         action="store",

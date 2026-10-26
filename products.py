@@ -1,17 +1,18 @@
-# products.py
 from functools import wraps
 
-from flask import Blueprint, jsonify, request
+from apiflask import APIBlueprint, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import text
 
 from database import db
 from models import User, Product
-from sqlalchemy import text
+from schemas import ProductCreate, ProductUpdate, ProductSummary, ProductOut
 
-products_bp = Blueprint(
+products_bp = APIBlueprint(
     "products",
     __name__,
-    url_prefix="/api/produits"
+    url_prefix="/api/produits",
+    tag="Produits"
 )
 
 
@@ -25,87 +26,63 @@ def admin_required(function):
         user = db.session.get(User, int(get_jwt_identity()))
 
         if user is None:
-            return jsonify({"error": "Utilisateur introuvable"}), 401
+            abort(401, "Utilisateur introuvable")
 
         if user.role != "admin":
-            return jsonify({
-                "error": "Accès réservé aux administrateurs"
-            }), 403
+            abort(403, "Accès réservé aux administrateurs")
 
         return function(*args, **kwargs)
 
     return wrapper
 
 
+def trouver_produit(product_id):
+    product = db.session.get(Product, product_id)
+
+    if product is None:
+        abort(404, "Produit introuvable")
+
+    return product
+
+
 #####################################################
 # LISTE DES PRODUITS
 #####################################################
 
-@products_bp.route("/", methods=["GET"])
+@products_bp.get("/")
+@products_bp.output(ProductSummary(many=True))
 def get_products():
-    products = db.session.execute(
+    return db.session.execute(
         db.select(Product).order_by(Product.id)
     ).scalars().all()
-
-    return jsonify([
-        {
-            "id": product.id,
-            "nom": product.nom,
-            "prix": product.prix
-        }
-        for product in products
-    ]), 200
 
 
 #####################################################
 # DÉTAIL D'UN PRODUIT
 #####################################################
 
-@products_bp.route("/<int:product_id>", methods=["GET"])
+@products_bp.get("/<int:product_id>")
+@products_bp.output(ProductOut)
 def get_product(product_id):
-    product = db.session.get(Product, product_id)
-
-    if product is None:
-        return jsonify({"error": "Produit introuvable"}), 404
-
-    return jsonify({
-        "id": product.id,
-        "nom": product.nom,
-        "description": product.description,
-        "categorie": product.categorie,
-        "prix": product.prix,
-        "quantite_stock": product.quantite_stock,
-        "date_creation": (
-            product.date_creation.isoformat()
-            if product.date_creation else None
-    )
-    }), 200
+    return trouver_produit(product_id)
 
 
 #####################################################
 # ADMIN : CRÉATION D'UN PRODUIT
 #####################################################
 
-@products_bp.route("/", methods=["POST"])
+@products_bp.post("/")
 @admin_required
-def create_product():
-    data = request.get_json()
-
-    product = Product(
-        nom=data["nom"].strip(),
-        description=data.get("description"),
-        categorie=data["categorie"].strip(),
-        prix=data["prix"],
-        quantite_stock=data.get("quantite_stock", 0)
-    )
+@products_bp.input(ProductCreate)
+@products_bp.output(ProductOut, status_code=201)
+@products_bp.doc(security="BearerAuth", responses=[401, 403])
+def create_product(json_data):
+    product = Product(**json_data)
 
     db.session.add(product)
     db.session.commit()
 
-    return jsonify({
-        "message": "Produit créé",
-        "id": product.id
-    }), 201
+    return product
 
 
 #####################################################
@@ -114,60 +91,31 @@ def create_product():
 
 @products_bp.route("/<int:product_id>", methods=["PUT", "PATCH"])
 @admin_required
-def update_product(product_id):
-    product = db.session.get(Product, product_id)
+@products_bp.input(ProductUpdate)
+@products_bp.output(ProductOut)
+@products_bp.doc(security="BearerAuth", responses=[401, 403, 404])
+def update_product(product_id, json_data):
+    product = trouver_produit(product_id)
 
-    if product is None:
-        return jsonify({"error": "Produit introuvable"}), 404
-
-    data = request.get_json()
-
-    if "nom" in data:
-        product.nom = data["nom"].strip()
-
-    if "description" in data:
-        product.description = data["description"]
-
-    if "categorie" in data:
-        product.categorie = data["categorie"].strip()
-
-    if "prix" in data:
-        product.prix = data["prix"]
-
-    if "quantite_stock" in data:
-        product.quantite_stock = data["quantite_stock"]
+    # Seuls les champs envoyés sont modifiés
+    for champ, valeur in json_data.items():
+        setattr(product, champ, valeur)
 
     db.session.commit()
 
-    return jsonify({
-        "message": "Produit modifié",
-        "produit": {
-            "id": product.id,
-            "nom": product.nom,
-            "description": product.description,
-            "categorie": product.categorie,
-            "prix": product.prix,
-            "quantite_stock": product.quantite_stock,
-            "date_creation": (
-                product.date_creation.isoformat()
-                if product.date_creation else None
-            )
-        }
-    }), 200
+    return product
 
 
 #####################################################
 # ADMIN : SUPPRESSION D'UN PRODUIT
 #####################################################
 
-@products_bp.route("/<int:product_id>", methods=["DELETE"])
+@products_bp.delete("/<int:product_id>")
 @admin_required
+@products_bp.output({}, status_code=204)
+@products_bp.doc(security="BearerAuth", responses=[401, 403, 404, 409])
 def delete_product(product_id):
-
-    product = db.session.get(Product, product_id)
-
-    if product is None:
-        return jsonify({"error": "Produit introuvable"}), 404
+    product = trouver_produit(product_id)
 
     commande = db.session.execute(
         text(
@@ -178,14 +126,7 @@ def delete_product(product_id):
     ).first()
 
     if commande is not None:
-        return jsonify({
-            "error": "Ce produit est associé à une commande"
-        }), 409
+        abort(409, "Ce produit est associé à une commande")
 
     db.session.delete(product)
     db.session.commit()
-
-    return jsonify({
-        "message": "Produit supprimé",
-        "id": product_id
-    }), 200

@@ -1,4 +1,3 @@
-# orders.py
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -28,7 +27,10 @@ TRANSITIONS = {
 def utilisateur_connecte():
     return db.session.get(User, int(get_jwt_identity()))
 
-
+# On transforme l'objet en dictionnaire 
+# Dans l'API on retourne du JSON via jsonify
+# Et jsonify ne sait pas convertir un objet SQLAlechemy
+# Avantage : si un champ change dans la base, la donnée renvoyée dans l'API est la même
 def ligne_en_dict(ligne):
     return {
         "id": ligne.id,
@@ -39,7 +41,8 @@ def ligne_en_dict(ligne):
         "sous_total": round(ligne.quantite * ligne.prix_unitaire, 2)
     }
 
-
+# Affichage ou non des produits de chaque commande
+# La liste de commandes peut être avec ou sans la liste des produits commandés
 def commande_en_dict(commande, avec_lignes=False):
     resultat = {
         "id": commande.id,
@@ -52,7 +55,7 @@ def commande_en_dict(commande, avec_lignes=False):
         "statut": commande.statut,
         "total": commande.total
     }
-
+    # Detail de la commande
     if avec_lignes:
         resultat["lignes"] = [ligne_en_dict(ligne) for ligne in commande.lignes]
 
@@ -68,7 +71,7 @@ def commande_accessible(commande_id):
 
     commande = db.session.get(Order, commande_id)
 
-    # Un client ne voit que ses commandes : 404 si tentative de connaitre commandes des autres utilisateurs
+    # Commandes visibles que pour l'utilisateur connecté ou l'admin (qui voit tout)
     if commande is None or (
         user.role != "admin" and commande.utilisateur_id != user.id
     ):
@@ -157,17 +160,27 @@ def create_order():
     if not isinstance(lignes, list) or not lignes:
         return jsonify({"error": "La commande doit contenir au moins un produit"}), 400
 
-    # On regroupe les quantités si un même produit apparaît plusieurs fois
+    # Regroupement des quantites du même produit d'une commande
     quantites = {}
 
+    # Exemple d'entrée :
+    #   "lignes": [
+    #       { "produit_id": 4, "quantite": 2 },
+    #       { "produit_id": 7, "quantite": 1 },
+    #       { "produit_id": 4, "quantite": 3 }
+    #   ]
     for ligne in lignes:
+        # Vérification que c'est un objet JSON
+        # C'est la technique de la clause de garde (plutôt que if else)
         if not isinstance(ligne, dict):
             return jsonify({"error": "Ligne de commande invalide"}), 400
 
         produit_id = ligne.get("produit_id")
         quantite = ligne.get("quantite")
 
-        # bool est un int en Python : on l'exclut explicitement
+        # On check si produit, quantite est un entier
+        # On check si produit, quantite n'est pas un boolean
+        # Ce 2ème check est nécessaire car un Bolean True, False est un entier déguisé
         if (
             not isinstance(produit_id, int) or isinstance(produit_id, bool)
             or not isinstance(quantite, int) or isinstance(quantite, bool)
@@ -191,7 +204,8 @@ def create_order():
         if produit is None:
             return jsonify({"error": f"Produit {produit_id} introuvable"}), 404
 
-        # Vérification du stock à la création (le stock n'est décrémenté qu'à la validation)
+        # Vérification du stock à la création
+        # le stock n'est décrémenté qu'à la validation
         if (produit.quantite_stock or 0) < quantite:
             return jsonify({
                 "error": f"Stock insuffisant pour {produit.nom}",
@@ -226,6 +240,7 @@ def update_order_status(commande_id):
         return jsonify({"error": "Commande introuvable"}), 404
 
     data = request.get_json(silent=True)
+    # Ternaire
     nouveau_statut = data.get("statut") if isinstance(data, dict) else None
 
     if nouveau_statut not in STATUTS_COMMANDE:
@@ -241,7 +256,8 @@ def update_order_status(commande_id):
             "error": f"Impossible de passer de '{ancien_statut}' à '{nouveau_statut}'"
         }), 409
 
-    # Validation : on revérifie le stock (il a pu baisser depuis la création) puis on le décrémente
+    # Validation : on revérifie le stock qui a pu baisser depuis la création
+    #  puis on le décrémente
     if nouveau_statut == "validee":
         for ligne in commande.lignes:
             if (ligne.produit.quantite_stock or 0) < ligne.quantite:

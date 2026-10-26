@@ -1,7 +1,9 @@
+# API - Application principale
 from flask import Flask
 from users import users_bp
-from admin import admin_bp
 from products import products_bp
+from orders import orders_bp
+
 from sqlalchemy import text
 from database import db
 from dotenv import load_dotenv
@@ -14,11 +16,17 @@ from flask_jwt_extended import JWTManager
 import click
 from werkzeug.security import generate_password_hash
 from models import User
+from apiflask import APIFlask 
 
 # On charge le fichier .env.local
 load_dotenv(Path(__file__).resolve().parent / ".env.local")
 
-app = Flask(__name__)
+app = APIFlask(__name__, title="DigiMarket API", version="1.0.0")
+
+app.config["VALIDATION_ERROR_STATUS_CODE"] = 400
+app.security_schemes = {
+    "BearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
+}
 
 # On utilise Flask JWT - on lit le fichier .env - durée du token Secret de 15 minutes
 app.config["JWT_SECRET_KEY"] = os.environ["JWT_SECRET_KEY"]
@@ -42,9 +50,9 @@ with app.app_context():
         raise  # Arrête le démarrage si la connexion échoue.
 
 
-app.register_blueprint(users_bp, url_prefix="/api/auth")
-app.register_blueprint(products_bp, url_prefix="/api/produits")
-app.register_blueprint(admin_bp, url_prefix="/api/orders")
+app.register_blueprint(users_bp)
+app.register_blueprint(products_bp)
+app.register_blueprint(orders_bp)
 
 
 #####################################################
