@@ -15,7 +15,9 @@ class Config:
 
     # JWT : clé secrète lue dans .env.local, token valable 15 minutes
     JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=int(os.environ.get("JWT_EXPIRES_MINUTES", 15))
+    )
 
     # Les erreurs de validation des schémas renvoient 400
     VALIDATION_ERROR_STATUS_CODE = 400
