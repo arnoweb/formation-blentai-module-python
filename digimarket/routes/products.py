@@ -1,9 +1,8 @@
 from apiflask import APIBlueprint, abort, pagination_builder
-from sqlalchemy import text
 
 from digimarket.auth import admin_required
 from digimarket.database import db
-from digimarket.models import Product
+from digimarket.models import Product, OrderItem
 from digimarket.schemas import (
     ProductCreate,
     ProductOut,
@@ -126,8 +125,7 @@ def delete_product(product_id):
     product = trouver_produit(product_id)
 
     commande = db.session.execute(
-        text("SELECT 1 FROM order_item WHERE produit_id = :product_id LIMIT 1"),
-        {"product_id": product_id},
+        db.select(OrderItem.id).filter_by(produit_id=product_id).limit(1)
     ).first()
 
     if commande is not None:
